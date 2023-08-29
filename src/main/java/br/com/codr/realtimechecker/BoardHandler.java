@@ -54,6 +54,7 @@ public class BoardHandler extends TextWebSocketHandler {
             final var response = objectMapper.writeValueAsString(boardStatusDTO);
             final var resp = new TextMessage(response);
             currentSession.sendMessage(resp);
+            sendMessageToOtherPlayer(board, currentSession, response);
 
         } else if (messageDTO.getType().equals(MessageType.CONTENT_CHANGE)) {
 
