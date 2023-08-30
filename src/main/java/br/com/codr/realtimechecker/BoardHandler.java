@@ -14,9 +14,7 @@ import org.springframework.web.socket.handler.TextWebSocketHandler;
 
 import java.io.IOException;
 import java.util.HashSet;
-import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Stream;
 
 @Service
 public class BoardHandler extends TextWebSocketHandler {
@@ -39,7 +37,7 @@ public class BoardHandler extends TextWebSocketHandler {
 
         if (messageDTO.getType().equals(MessageType.CREATE_NEW_GAME)) {
 
-            final var board = boardsService.create(messageDTO.getUserId(), currentSession.getId());
+            final var board = boardsService.create(messageDTO.getUserId(), currentSession.getId(), messageDTO.getContent().getBlackPositions());
 
             final var boardStatusDTO = BoardStatusDTO.fromEntity(board);
             final var response = objectMapper.writeValueAsString(boardStatusDTO);
@@ -48,7 +46,7 @@ public class BoardHandler extends TextWebSocketHandler {
 
         } else if (messageDTO.getType().equals(MessageType.ENTER_A_GAME)) {
 
-            final var board = boardsService.addOtherPlayer(messageDTO.getCode(), messageDTO.getUserId(), currentSession.getId());
+            final var board = boardsService.addOtherPlayer(messageDTO.getCode(), messageDTO.getUserId(), currentSession.getId(), messageDTO.getContent().getWhitePositions());
 
             final var boardStatusDTO = BoardStatusDTO.fromEntity(board);
             final var response = objectMapper.writeValueAsString(boardStatusDTO);
@@ -59,7 +57,10 @@ public class BoardHandler extends TextWebSocketHandler {
         } else if (messageDTO.getType().equals(MessageType.CONTENT_CHANGE)) {
 
             boardsService.findById(messageDTO.getId())
-                .ifPresent(board -> sendMessageToOtherPlayer(board, messageDTO.getUserId(), message.getPayload()));
+                .ifPresent(board -> {
+                    boardsService.updatePositions(board, messageDTO.getContent().getWhitePositions(), messageDTO.getContent().getBlackPositions());
+                    sendMessageToOtherPlayer(board, messageDTO.getUserId(), message.getPayload());
+                });
         }
     }
 

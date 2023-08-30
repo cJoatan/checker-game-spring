@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -15,12 +16,13 @@ public class BoardsService {
 
     private final BoardsRepository boardsRepository;
 
-    public Board create(String creatorId, String sessionId) {
+    public Board create(String creatorId, String sessionId, List<List<Integer>> positions) {
         String code = RandomStringUtils.random(6, true, false);
 
         final var gameUser = new GameUser();
         gameUser.setId(creatorId);
         gameUser.setSessionId(sessionId);
+        gameUser.setPositions(positions);
 
         final var board = new Board();
         board.setPlayerBlack(gameUser);
@@ -30,7 +32,7 @@ public class BoardsService {
         return boardsRepository.save(board);
     }
 
-    public Board addOtherPlayer(String code, String otherPlayerId, String sessionId) {
+    public Board addOtherPlayer(String code, String otherPlayerId, String sessionId, List<List<Integer>> otherPlayersPositions) {
 
         final var board = boardsRepository.findByCode(code);
         final var playerSearch = board.getPlayers()
@@ -46,6 +48,7 @@ public class BoardsService {
             final var gameUser = new GameUser();
             gameUser.setId(otherPlayerId);
             gameUser.setSessionId(sessionId);
+            gameUser.setPositions(otherPlayersPositions);
 
             board.setPlayerWhite(gameUser);
             board.setStatus(Board.Status.START_GAME);
@@ -72,5 +75,11 @@ public class BoardsService {
                 })
             );
 
+    }
+
+    public void updatePositions(Board board, List<List<Integer>> whitePositions, List<List<Integer>> blackPositions) {
+        board.getPlayerWhite().setPositions(whitePositions);
+        board.getPlayerBlack().setPositions(blackPositions);
+        boardsRepository.save(board);
     }
 }

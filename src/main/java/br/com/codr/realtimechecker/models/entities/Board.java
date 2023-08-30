@@ -23,9 +23,6 @@ public class Board {
 
     private GameUser playerBlack;
 
-    private List<Integer> whitePositions;
-    private List<Integer> blackPositions;
-
     private Status status;
 
     public List<GameUser> getPlayers() {
