@@ -39,7 +39,7 @@ public class BoardHandler extends TextWebSocketHandler {
 
         if (messageDTO.getType().equals(MessageType.CREATE_NEW_GAME)) {
 
-            final var board = boardsService.create(currentSession.getId());
+            final var board = boardsService.create(messageDTO.getUserId(), currentSession.getId());
 
             final var boardStatusDTO = BoardStatusDTO.fromEntity(board);
             final var response = objectMapper.writeValueAsString(boardStatusDTO);
@@ -48,24 +48,24 @@ public class BoardHandler extends TextWebSocketHandler {
 
         } else if (messageDTO.getType().equals(MessageType.ENTER_A_GAME)) {
 
-            final var board = boardsService.addOtherPlayer(messageDTO.getCode(), currentSession.getId());
+            final var board = boardsService.addOtherPlayer(messageDTO.getCode(), messageDTO.getUserId(), currentSession.getId());
 
             final var boardStatusDTO = BoardStatusDTO.fromEntity(board);
             final var response = objectMapper.writeValueAsString(boardStatusDTO);
             final var resp = new TextMessage(response);
             currentSession.sendMessage(resp);
-            sendMessageToOtherPlayer(board, currentSession, response);
+            sendMessageToOtherPlayer(board, messageDTO.getUserId(), response);
 
         } else if (messageDTO.getType().equals(MessageType.CONTENT_CHANGE)) {
 
             boardsService.findById(messageDTO.getId())
-                .ifPresent(board -> sendMessageToOtherPlayer(board, currentSession, message.getPayload()));
+                .ifPresent(board -> sendMessageToOtherPlayer(board, messageDTO.getUserId(), message.getPayload()));
         }
     }
 
-    private void sendMessageToOtherPlayer(Board board, WebSocketSession currentSession, String messagePayload) {
-        board.getOtherPlayer(currentSession.getId())
-            .ifPresent(otherPlayer -> sendMessage(otherPlayer, messagePayload));
+    private void sendMessageToOtherPlayer(Board board, String userId, String messagePayload) {
+        board.getOtherPlayer(userId)
+            .ifPresent(otherPlayer -> sendMessage(otherPlayer.getSessionId(), messagePayload));
     }
 
     private void sendMessage(String sessionId, String messagePayload) {
@@ -90,6 +90,8 @@ public class BoardHandler extends TextWebSocketHandler {
 
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
+
+//        boardsService.removeSession(session.getId());
 
 //        boardsService.finishBoard(session.getId());
         System.out.println("closing connection");

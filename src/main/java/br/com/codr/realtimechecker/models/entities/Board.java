@@ -5,6 +5,7 @@ import lombok.Setter;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -18,26 +19,39 @@ public class Board {
 
     private String code;
 
-    private String playerWhite;
+    private GameUser playerWhite;
 
-    private String playerBlack;
+    private GameUser playerBlack;
 
     private List<Integer> whitePositions;
     private List<Integer> blackPositions;
 
     private Status status;
 
-    public List<String> getPlayers() {
-        return List.of(playerWhite, playerBlack);
+    public List<GameUser> getPlayers() {
+        final var list = new ArrayList<GameUser>();
+        if (playerWhite != null)
+            list.add(playerWhite);
+        if (playerBlack != null)
+            list.add(playerBlack);
+        return list;
+
     }
 
-    public Optional<String> getOtherPlayer(String currentPlayer) {
+    public Optional<GameUser> getOtherPlayer(String currentPlayerId) {
 
         return getPlayers()
             .stream()
-            .filter(player -> !player.equals(currentPlayer))
+            .filter(player -> !player.getId().equals(currentPlayerId))
             .findFirst();
 
+    }
+
+    public Optional<GameUser> getPlayerBySession(String sessionId) {
+        return getPlayers()
+            .stream()
+            .filter(player -> player.getSessionId().equals(sessionId))
+            .findFirst();
     }
 
     public enum Status {

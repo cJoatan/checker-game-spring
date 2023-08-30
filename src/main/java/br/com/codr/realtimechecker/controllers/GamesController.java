@@ -15,15 +15,15 @@ public class GamesController {
 
     private BoardsRepository boardsRepository;
 
-    @PostMapping("invite-a-friend")
-    public String inviteAFriend() {
-        String random = RandomStringUtils.random(6, true, false);
-        var board = new Board();
-        board.setCode(random);
-        board.setPlayerBlack("");
-        boardsRepository.save(board);
-        return random;
-
-    }
+//    @PostMapping("invite-a-friend")
+//    public String inviteAFriend() {
+//        String random = RandomStringUtils.random(6, true, false);
+//        var board = new Board();
+//        board.setCode(random);
+//        board.setPlayerBlack("");
+//        boardsRepository.save(board);
+//        return random;
+//
+//    }
 
 }
