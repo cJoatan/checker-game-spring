@@ -5,7 +5,9 @@ import br.com.codr.realtimechecker.models.dto.MessageDTO;
 import br.com.codr.realtimechecker.models.dto.MessageType;
 import br.com.codr.realtimechecker.models.entities.Board;
 import br.com.codr.realtimechecker.services.BoardsService;
+import br.com.codr.realtimechecker.services.CheckerGameProducer;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
@@ -13,22 +15,23 @@ import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.Set;
 
 @Service
 public class BoardHandler extends TextWebSocketHandler {
 
     private final BoardsService boardsService;
+    private final CheckerGameProducer checkerGameProducer;
 
-    final Set<WebSocketSession> sessions = new HashSet<>();
+    private final WebSocketSessions webSocketSessions;
 
-    public BoardHandler(BoardsService boardsService) {
+    public BoardHandler(BoardsService boardsService, CheckerGameProducer checkerGameProducer, WebSocketSessions webSocketSessions) {
         this.boardsService = boardsService;
+        this.checkerGameProducer = checkerGameProducer;
+        this.webSocketSessions = webSocketSessions;
     }
 
     @Override
-    protected void handleTextMessage(WebSocketSession currentSession, TextMessage message) throws Exception {
+    protected void handleTextMessage(@NonNull WebSocketSession currentSession, TextMessage message) throws Exception {
 
         System.out.println("message.getPayload() " + message.getPayload());
 
@@ -52,38 +55,28 @@ public class BoardHandler extends TextWebSocketHandler {
             final var response = objectMapper.writeValueAsString(boardStatusDTO);
             final var resp = new TextMessage(response);
             currentSession.sendMessage(resp);
-            sendMessageToOtherPlayer(board, messageDTO.getUserId(), response);
+            sendMessageToOtherPlayer(response);
 
         } else if (messageDTO.getType().equals(MessageType.CONTENT_CHANGE)) {
 
             boardsService.findById(messageDTO.getId())
                 .ifPresent(board -> {
                     boardsService.updatePositions(board, messageDTO.getContent().getWhitePositions(), messageDTO.getContent().getBlackPositions());
-                    sendMessageToOtherPlayer(board, messageDTO.getUserId(), message.getPayload());
+                    sendMessageToOtherPlayer(message.getPayload());
                 });
         }
     }
 
-    private void sendMessageToOtherPlayer(Board board, String userId, String messagePayload) {
-        board.getOtherPlayer(userId)
-            .ifPresent(otherPlayer -> sendMessage(otherPlayer.getSessionId(), messagePayload));
+    private void sendMessageToOtherPlayer(String messagePayload) {
+        sendMessage(messagePayload);
     }
 
-    private void sendMessage(String sessionId, String messagePayload) {
-        sessions.stream()
-            .filter(session -> session.getId().equals(sessionId))
-            .findFirst()
-            .ifPresent(session -> {
-                try {
-                    session.sendMessage(new TextMessage(messagePayload));
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            });
+    private void sendMessage(String messagePayload) {
+        checkerGameProducer.send(messagePayload);
     }
 
     public void sendMessageToAll(WebSocketSession currentSession, String message) throws IOException {
-        for (WebSocketSession sess : sessions) {
+        for (WebSocketSession sess : webSocketSessions.sessions) {
             if (!sess.getId().equals(currentSession.getId()))
                 sess.sendMessage(new TextMessage(message));
         }
@@ -91,18 +84,12 @@ public class BoardHandler extends TextWebSocketHandler {
 
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
-
-//        boardsService.removeSession(session.getId());
-
-//        boardsService.finishBoard(session.getId());
-        System.out.println("closing connection");
-        sessions.remove(session);
-
+        webSocketSessions.sessions.remove(session);
     }
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
-        sessions.add(session);
+        webSocketSessions.sessions.add(session);
     }
 
 

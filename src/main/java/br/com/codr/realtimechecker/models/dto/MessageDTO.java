@@ -11,6 +11,8 @@ public class MessageDTO {
 
     private String userId;
 
+    private String status;
+
     private String type;
 
     private MessageContent content;
