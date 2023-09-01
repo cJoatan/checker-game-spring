@@ -2,6 +2,7 @@ package br.com.codr.realtimechecker.services;
 
 import br.com.codr.realtimechecker.models.entities.Board;
 import br.com.codr.realtimechecker.models.entities.GameUser;
+import br.com.codr.realtimechecker.models.entities.TextMessage;
 import br.com.codr.realtimechecker.repositories.BoardsRepository;
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -81,5 +82,24 @@ public class BoardsService {
         board.getPlayerWhite().setPositions(whitePositions);
         board.getPlayerBlack().setPositions(blackPositions);
         boardsRepository.save(board);
+    }
+
+    public Optional<TextMessage> addTextMessage(Board board, String sessionId, String text) {
+        final var playerBySession = board.getPlayerBySession(sessionId);
+
+        if (playerBySession.isPresent()) {
+
+            final var gameUser = playerBySession.get();
+            final Integer order = board.getTextMessages().size() + 1;
+            final var textMessage = new TextMessage();
+            textMessage.setText(text);
+            textMessage.setGameUserId(gameUser.getId());
+            textMessage.setOrder(Long.parseLong(order.toString()));
+
+            board.getTextMessages().add(textMessage);
+            boardsRepository.save(board);
+            return Optional.of(textMessage);
+        }
+        return Optional.empty();
     }
 }

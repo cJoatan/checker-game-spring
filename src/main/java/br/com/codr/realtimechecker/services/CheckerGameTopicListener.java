@@ -2,7 +2,8 @@ package br.com.codr.realtimechecker.services;
 
 import br.com.codr.realtimechecker.WebSocketSessions;
 import br.com.codr.realtimechecker.models.dto.MessageDTO;
-import br.com.codr.realtimechecker.models.entities.Board;
+import br.com.codr.realtimechecker.models.dto.MessageType;
+import br.com.codr.realtimechecker.models.dto.TextMessageDTO;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -30,7 +31,7 @@ public class CheckerGameTopicListener {
     }
 
     @KafkaListener(topics = "${checker-game.board.kafka.topic}", groupId = "checker_game_group")
-    public void consume(ConsumerRecord<String, String> payload) throws JsonProcessingException {
+    public void consumeBoard(ConsumerRecord<String, String> payload) throws JsonProcessingException {
 
         final var objectMapper = new ObjectMapper();
         final var messageDTO = objectMapper.readValue(payload.value(), MessageDTO.class);
@@ -49,4 +50,36 @@ public class CheckerGameTopicListener {
                 });
         });
     }
+
+
+    @KafkaListener(topics = "${checker-game.chat.kafka.topic}", groupId = "checker_game_group")
+    public void consumeChat(ConsumerRecord<String, String> payload) throws JsonProcessingException {
+        System.out.println(payload);
+        final var objectMapper = new ObjectMapper();
+        final var messageDTO = objectMapper.readValue(payload.value(), MessageDTO.class);
+//        boardsService.findById(messageDTO.getId())
+//                .ifPresent(board -> {
+//
+//                    final var textMessageIsAdded = boardsService.addTextMessage(board, currentSession.getId(), messageDTO.getMessageText());
+//                    if (textMessageIsAdded.isPresent()) {
+//                        final var textMessage = textMessageIsAdded.get();
+//
+//                        final var textMessageDTO = new TextMessageDTO();
+//                        textMessageDTO.setText(messageDTO.getMessageText());
+//                        textMessageDTO.setGameUserId(messageDTO.getMessageText());
+//                        textMessageDTO.setOrder(textMessage.getOrder());
+//                        textMessageDTO.setType(MessageType.SEND_CHAT_MESSAGE);
+//
+//                        try {
+//                            final var response = objectMapper.writeValueAsString(textMessageDTO);
+//                            sendMessageToOtherPlayer(response);
+//                        } catch (JsonProcessingException e) {
+//                            e.printStackTrace();
+//                        }
+//                    }
+//                });
+
+    }
+
+
 }

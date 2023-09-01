@@ -12,14 +12,20 @@ import org.springframework.stereotype.Service;
 public class CheckerGameProducer {
 
     @Value("${checker-game.board.kafka.topic}")
-    private String topicName;
+    private String boardTopicName;
 
+    @Value("${checker-game.chat.kafka.topic}")
+    private String chatTopicName;
     private final KafkaTemplate<String, String> kafkaTemplate;
 
-    public void send(String message) {
-        log.info("Payload sended: {}", message);
-        kafkaTemplate.send(topicName, message);
+    public void sendBoard(String message) {
+        log.info("Board Payload sended: {}", message);
+        kafkaTemplate.send(boardTopicName, message);
+    }
 
+    public void sendTextMessage(String message) {
+        log.info("Chat Payload sended: {}", message);
+        kafkaTemplate.send(chatTopicName, message);
     }
 
 }

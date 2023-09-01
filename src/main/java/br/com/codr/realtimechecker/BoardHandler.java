@@ -3,7 +3,6 @@ package br.com.codr.realtimechecker;
 import br.com.codr.realtimechecker.models.dto.BoardStatusDTO;
 import br.com.codr.realtimechecker.models.dto.MessageDTO;
 import br.com.codr.realtimechecker.models.dto.MessageType;
-import br.com.codr.realtimechecker.models.entities.Board;
 import br.com.codr.realtimechecker.services.BoardsService;
 import br.com.codr.realtimechecker.services.CheckerGameProducer;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -55,24 +54,30 @@ public class BoardHandler extends TextWebSocketHandler {
             final var response = objectMapper.writeValueAsString(boardStatusDTO);
             final var resp = new TextMessage(response);
             currentSession.sendMessage(resp);
-            sendMessageToOtherPlayer(response);
+            sendBoardMessageToOtherPlayer(response);
 
         } else if (messageDTO.getType().equals(MessageType.CONTENT_CHANGE)) {
 
             boardsService.findById(messageDTO.getId())
                 .ifPresent(board -> {
                     boardsService.updatePositions(board, messageDTO.getContent().getWhitePositions(), messageDTO.getContent().getBlackPositions());
-                    sendMessageToOtherPlayer(message.getPayload());
+                    sendBoardMessageToOtherPlayer(message.getPayload());
                 });
+        } else if (messageDTO.getType().equals(MessageType.SEND_CHAT_MESSAGE)) {
+            sendTextMessageToOtherPlayer(message.getPayload());
         }
     }
 
-    private void sendMessageToOtherPlayer(String messagePayload) {
+    private void sendTextMessageToOtherPlayer(String payload) {
+        checkerGameProducer.sendBoard(payload);
+    }
+
+    private void sendBoardMessageToOtherPlayer(String messagePayload) {
         sendMessage(messagePayload);
     }
 
     private void sendMessage(String messagePayload) {
-        checkerGameProducer.send(messagePayload);
+        checkerGameProducer.sendBoard(messagePayload);
     }
 
     public void sendMessageToAll(WebSocketSession currentSession, String message) throws IOException {

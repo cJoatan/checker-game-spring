@@ -25,6 +25,8 @@ public class Board {
 
     private Status status;
 
+    private List<TextMessage> textMessages = new ArrayList<>();
+
     public List<GameUser> getPlayers() {
         final var list = new ArrayList<GameUser>();
         if (playerWhite != null)

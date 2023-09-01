@@ -19,4 +19,6 @@ public class MessageDTO {
 
     private String code;
 
+    private String messageText;
+
 }
